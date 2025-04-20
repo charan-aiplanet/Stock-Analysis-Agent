@@ -399,7 +399,7 @@ def main():
                     else:
                         # Initialize Groq LLM
                         os.environ["GROQ_API_KEY"] = st.session_state.groq_api_key
-                        llm_instance = Groq(model_name=st.session_state.groq_model)
+                        llm_instance = ChatGroq(model_name=st.session_state.groq_model)
                         
                         # Create a progress indicator
                         progress_bar = st.progress(0)
