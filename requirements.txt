@@ -1,7 +1,4 @@
-langchain==0.1.16
-crewai==0.22.6
 streamlit==1.32.2
-yfinance==0.2.36
 pandas==2.2.1
+yfinance==0.2.36
 plotly==5.20.0
-chromadb==0.4.24
