@@ -4,7 +4,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
 from crewai import Agent, Task, Crew
-from langchain.llms import Groq
+from langchain_groq import ChatGroq
 import time
 
 # Set up Groq LLM
