@@ -1,0 +1,6 @@
+langchain
+crewai
+streamlit
+yfinance
+pandas
+plotly
