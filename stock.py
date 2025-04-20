@@ -199,12 +199,28 @@ def sentiment_analysis(stock_symbol):
 
 def analyze_stock(stock_symbol, llm_instance):
     """Create and run a CrewAI workflow to analyze a stock."""
-    # Define Agents
+    # Define Agents with tools as dictionaries
     researcher = Agent(
         role='Stock Market Researcher',
         goal='Gather and analyze comprehensive data about the stock',
         backstory="You're an experienced stock market researcher with a keen eye for detail and a talent for uncovering hidden trends.",
-        tools=[yf_technical_analysis, yf_fundamental_analysis, competitor_analysis],
+        tools=[
+            {
+                "name": "yf_technical_analysis",
+                "description": "Perform technical analysis on a stock using yfinance",
+                "func": yf_technical_analysis
+            },
+            {
+                "name": "yf_fundamental_analysis",
+                "description": "Perform fundamental analysis on a stock using yfinance",
+                "func": yf_fundamental_analysis
+            },
+            {
+                "name": "competitor_analysis",
+                "description": "Analyze competitors of a given stock",
+                "func": competitor_analysis
+            }
+        ],
         llm=llm_instance,
         verbose=True
     )
@@ -213,7 +229,23 @@ def analyze_stock(stock_symbol, llm_instance):
         role='Financial Analyst',
         goal='Analyze the gathered data and provide investment insights',
         backstory="You're a seasoned financial analyst known for your accurate predictions and ability to synthesize complex information.",
-        tools=[yf_technical_analysis, yf_fundamental_analysis, risk_assessment],
+        tools=[
+            {
+                "name": "yf_technical_analysis",
+                "description": "Perform technical analysis on a stock using yfinance",
+                "func": yf_technical_analysis
+            },
+            {
+                "name": "yf_fundamental_analysis",
+                "description": "Perform fundamental analysis on a stock using yfinance",
+                "func": yf_fundamental_analysis
+            },
+            {
+                "name": "risk_assessment",
+                "description": "Assess the risk level of a stock",
+                "func": risk_assessment
+            }
+        ],
         llm=llm_instance,
         verbose=True
     )
@@ -222,7 +254,13 @@ def analyze_stock(stock_symbol, llm_instance):
         role='Sentiment Analyst',
         goal='Analyze market sentiment and its potential impact on the stock',
         backstory="You're an expert in behavioral finance and sentiment analysis, capable of gauging market emotions and their effects on stock performance.",
-        tools=[sentiment_analysis],
+        tools=[
+            {
+                "name": "sentiment_analysis",
+                "description": "Analyze market sentiment for a stock",
+                "func": sentiment_analysis
+            }
+        ],
         llm=llm_instance,
         verbose=True
     )
