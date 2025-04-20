@@ -7,9 +7,6 @@ from crewai import Agent, Task, Crew
 from langchain.llms import Groq
 import time
 
-# Set up Groq LLM (will be initialized with API key later)
-llm = None
-
 # Sample user credentials (in a real app, use a secure database)
 USERS = {
     "user1": "password1",
@@ -200,7 +197,7 @@ def sentiment_analysis(stock_symbol):
             'note': 'Limited data available for this stock'
         }
 
-def analyze_stock(stock_symbol):
+def analyze_stock(stock_symbol, llm_instance):
     """Create and run a CrewAI workflow to analyze a stock."""
     # Define Agents
     researcher = Agent(
@@ -208,7 +205,7 @@ def analyze_stock(stock_symbol):
         goal='Gather and analyze comprehensive data about the stock',
         backstory="You're an experienced stock market researcher with a keen eye for detail and a talent for uncovering hidden trends.",
         tools=[yf_technical_analysis, yf_fundamental_analysis, competitor_analysis],
-        llm=llm,
+        llm=llm_instance,
         verbose=True
     )
     
@@ -217,7 +214,7 @@ def analyze_stock(stock_symbol):
         goal='Analyze the gathered data and provide investment insights',
         backstory="You're a seasoned financial analyst known for your accurate predictions and ability to synthesize complex information.",
         tools=[yf_technical_analysis, yf_fundamental_analysis, risk_assessment],
-        llm=llm,
+        llm=llm_instance,
         verbose=True
     )
     
@@ -226,7 +223,7 @@ def analyze_stock(stock_symbol):
         goal='Analyze market sentiment and its potential impact on the stock',
         backstory="You're an expert in behavioral finance and sentiment analysis, capable of gauging market emotions and their effects on stock performance.",
         tools=[sentiment_analysis],
-        llm=llm,
+        llm=llm_instance,
         verbose=True
     )
     
@@ -235,7 +232,7 @@ def analyze_stock(stock_symbol):
         goal='Develop a comprehensive investment strategy based on all available data',
         backstory="You're a renowned investment strategist known for creating tailored investment plans that balance risk and reward.",
         tools=[],
-        llm=llm,
+        llm=llm_instance,
         verbose=True
     )
     
@@ -353,16 +350,7 @@ def main():
                     st.session_state.stock_symbol = stock_symbol.upper()
                     st.session_state.analysis_started = True
                     st.session_state.analysis_result = None
-                    
-                    # Initialize Groq LLM with API key
-                    global llm
-                    try:
-                        os.environ["GROQ_API_KEY"] = st.session_state.groq_api_key
-                        llm = Groq(model_name=st.session_state.groq_model)
-                        st.experimental_rerun()
-                    except Exception as e:
-                        st.error(f"Error initializing Groq: {str(e)}")
-                        st.session_state.analysis_started = False
+                    st.experimental_rerun()
         
         # Show stock data visualization
         if st.session_state.stock_symbol:
@@ -409,11 +397,9 @@ def main():
                         st.error("Please enter your Groq API key in the sidebar!")
                         st.session_state.analysis_started = False
                     else:
-                        # Initialize Groq LLM if not already done
-                        global llm
-                        if llm is None:
-                            os.environ["GROQ_API_KEY"] = st.session_state.groq_api_key
-                            llm = Groq(model_name=st.session_state.groq_model)
+                        # Initialize Groq LLM
+                        os.environ["GROQ_API_KEY"] = st.session_state.groq_api_key
+                        llm_instance = Groq(model_name=st.session_state.groq_model)
                         
                         # Create a progress indicator
                         progress_bar = st.progress(0)
@@ -422,7 +408,7 @@ def main():
                             time.sleep(0.1)
                             progress_bar.progress(i + 1)
                             
-                        result = analyze_stock(st.session_state.stock_symbol)
+                        result = analyze_stock(st.session_state.stock_symbol, llm_instance)
                         st.session_state.analysis_result = result
                         st.session_state.analysis_started = False
                         st.experimental_rerun()
