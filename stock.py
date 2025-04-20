@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from crewai import Agent, Task, Crew
 from langchain_groq import ChatGroq
+from langchain.tools import tool
 import time
 
 # Sample user credentials (in a real app, use a secure database)
@@ -13,8 +14,9 @@ USERS = {
     "user2": "password2"
 }
 
-# Helper functions for yfinance data analysis
-def yf_technical_analysis(stock_symbol):
+# Helper functions for yfinance data analysis - using the @tool decorator
+@tool
+def yf_technical_analysis(stock_symbol: str) -> dict:
     """Perform technical analysis on a stock using yfinance."""
     try:
         # Get stock data
@@ -42,9 +44,10 @@ def yf_technical_analysis(stock_symbol):
             "volume": hist['Volume'].iloc[-1]
         }
     except Exception as e:
-        return f"Error in technical analysis: {str(e)}"
+        return {"error": f"Error in technical analysis: {str(e)}"}
 
-def yf_fundamental_analysis(stock_symbol):
+@tool
+def yf_fundamental_analysis(stock_symbol: str) -> dict:
     """Perform fundamental analysis on a stock using yfinance."""
     try:
         # Get stock info
@@ -84,9 +87,10 @@ def yf_fundamental_analysis(stock_symbol):
             
         return metrics
     except Exception as e:
-        return f"Error in fundamental analysis: {str(e)}"
+        return {"error": f"Error in fundamental analysis: {str(e)}"}
 
-def competitor_analysis(stock_symbol):
+@tool
+def competitor_analysis(stock_symbol: str) -> dict:
     """Analyze competitors of a given stock."""
     try:
         stock = yf.Ticker(stock_symbol)
@@ -134,10 +138,12 @@ def competitor_analysis(stock_symbol):
                     'industry': industry,
                     'competitors': competitor_data
                 }
+        return {"error": "Could not determine competitors"}
     except Exception as e:
-        return f"Error in competitor analysis: {str(e)}"
+        return {"error": f"Error in competitor analysis: {str(e)}"}
 
-def risk_assessment(stock_symbol):
+@tool
+def risk_assessment(stock_symbol: str) -> dict:
     """Assess the risk level of a stock."""
     try:
         stock = yf.Ticker(stock_symbol)
@@ -165,12 +171,12 @@ def risk_assessment(stock_symbol):
             'drawdown_history': drawdown.tail(30).to_dict()
         }
     except Exception as e:
-        return f"Error in risk assessment: {str(e)}"
+        return {"error": f"Error in risk assessment: {str(e)}"}
 
-def sentiment_analysis(stock_symbol):
+@tool
+def sentiment_analysis(stock_symbol: str) -> dict:
     """
-    Mock sentiment analysis function.
-    In a real app, this would connect to news APIs and social media data.
+    Analyze market sentiment for a stock using news and social media data.
     """
     sentiment_data = {
         'AAPL': {'sentiment': 'positive', 'score': 0.75, 'sources': 'news (65%), social media (35%)'},
@@ -189,7 +195,6 @@ def sentiment_analysis(stock_symbol):
     else:
         import random
         sentiments = ['positive', 'neutral', 'negative', 'mixed']
-        scores = [round(random.uniform(0.3, 0.8), 2) for _ in range(4)]
         return {
             'sentiment': random.choice(sentiments),
             'score': random.uniform(0.3, 0.8),
@@ -199,28 +204,12 @@ def sentiment_analysis(stock_symbol):
 
 def analyze_stock(stock_symbol, llm_instance):
     """Create and run a CrewAI workflow to analyze a stock."""
-    # Define Agents with tools as dictionaries
+    # Define Agents with properly decorated tools
     researcher = Agent(
         role='Stock Market Researcher',
         goal='Gather and analyze comprehensive data about the stock',
         backstory="You're an experienced stock market researcher with a keen eye for detail and a talent for uncovering hidden trends.",
-        tools=[
-            {
-                "name": "yf_technical_analysis",
-                "description": "Perform technical analysis on a stock using yfinance",
-                "func": yf_technical_analysis
-            },
-            {
-                "name": "yf_fundamental_analysis",
-                "description": "Perform fundamental analysis on a stock using yfinance",
-                "func": yf_fundamental_analysis
-            },
-            {
-                "name": "competitor_analysis",
-                "description": "Analyze competitors of a given stock",
-                "func": competitor_analysis
-            }
-        ],
+        tools=[yf_technical_analysis, yf_fundamental_analysis, competitor_analysis],
         llm=llm_instance,
         verbose=True
     )
@@ -229,23 +218,7 @@ def analyze_stock(stock_symbol, llm_instance):
         role='Financial Analyst',
         goal='Analyze the gathered data and provide investment insights',
         backstory="You're a seasoned financial analyst known for your accurate predictions and ability to synthesize complex information.",
-        tools=[
-            {
-                "name": "yf_technical_analysis",
-                "description": "Perform technical analysis on a stock using yfinance",
-                "func": yf_technical_analysis
-            },
-            {
-                "name": "yf_fundamental_analysis",
-                "description": "Perform fundamental analysis on a stock using yfinance",
-                "func": yf_fundamental_analysis
-            },
-            {
-                "name": "risk_assessment",
-                "description": "Assess the risk level of a stock",
-                "func": risk_assessment
-            }
-        ],
+        tools=[yf_technical_analysis, yf_fundamental_analysis, risk_assessment],
         llm=llm_instance,
         verbose=True
     )
@@ -254,13 +227,7 @@ def analyze_stock(stock_symbol, llm_instance):
         role='Sentiment Analyst',
         goal='Analyze market sentiment and its potential impact on the stock',
         backstory="You're an expert in behavioral finance and sentiment analysis, capable of gauging market emotions and their effects on stock performance.",
-        tools=[
-            {
-                "name": "sentiment_analysis",
-                "description": "Analyze market sentiment for a stock",
-                "func": sentiment_analysis
-            }
-        ],
+        tools=[sentiment_analysis],
         llm=llm_instance,
         verbose=True
     )
@@ -437,7 +404,7 @@ def main():
                     else:
                         # Initialize Groq LLM
                         os.environ["GROQ_API_KEY"] = st.session_state.groq_api_key
-                        llm_instance = ChatGroq(model_name=st.session_state.groq_model)
+                        llm_instance = ChatGroq(model_name=st.session_state.groq_model, api_key=st.session_state.groq_api_key)
                         
                         # Create a progress indicator
                         progress_bar = st.progress(0)
