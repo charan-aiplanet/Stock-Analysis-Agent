@@ -2,5 +2,6 @@ streamlit==1.32.2
 pandas==2.2.1
 yfinance==0.2.36
 plotly
-crewai
+crewai==0.70.1
 crewai-tools
+pysqlite3-binary
