@@ -3,4 +3,3 @@ pandas==2.2.1
 yfinance==0.2.36
 plotly==5.20.0
 crewai-lite
-chromadb
